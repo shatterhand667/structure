@@ -9,8 +9,12 @@ pivotLength       = input.int(4,   "Pivot Length",         minval=1, maxval=20,
                      tooltip="Bars to the left and right required to confirm a pivot high/low.")
 maxBaseCandles    = input.int(2,   "Max Base Candles",      minval=1, maxval=5,
                      tooltip="Maximum number of small-body candles that form the base before the impulse.")
+useBaseFilter     = input.bool(true,  "Base Body Filter",
+                     tooltip="When enabled, base candles must have a small body (< Base Body Mult × ATR).")
 baseBodyMult      = input.float(1.0, "Base Body Mult",      minval=0.1, step=0.1,
                      tooltip="A base candle's body must be smaller than this multiple of ATR(14).")
+useDepartureFilter = input.bool(true, "Departure Filter",
+                     tooltip="When enabled, requires at least one strong directional candle after the pivot.")
 departureBodyMult = input.float(0.8, "Departure Body Mult", minval=0.1, step=0.1,
                      tooltip="At least one departure candle's body must exceed this multiple of ATR(14).")
 
@@ -100,7 +104,7 @@ findBase(pivOffset, dir) =>
 
     for j = pivOffset to pivOffset + maxBaseCandles - 1
         cBody = math.abs(close[j] - open[j])
-        if na(close[j]) or cBody >= baseBodyMult * atr
+        if na(close[j]) or (useBaseFilter and cBody >= baseBodyMult * atr)
             break
         bLen  += 1
         wHi   := na(wHi) ? high[j] : math.max(wHi, high[j])
@@ -122,18 +126,21 @@ findBase(pivOffset, dir) =>
         [pHi, pLo, wHi, wLo, bLen, tight]
 // True if at least one bar between the pivot and now is a strong directional candle.
 validateDeparture(pivOffset, dir) =>
-    atr   = ta.atr(14)
-    found = false
-    for j = 1 to pivOffset - 1
-        cBody = math.abs(close[j] - open[j])
-        if cBody > departureBodyMult * atr
-            if dir == 1  and close[j] > open[j]
-                found := true
-                break
-            if dir == -1 and close[j] < open[j]
-                found := true
-                break
-    found
+    if not useDepartureFilter
+        true
+    else
+        atr   = ta.atr(14)
+        found = false
+        for j = 1 to pivOffset - 1
+            cBody = math.abs(close[j] - open[j])
+            if cBody > departureBodyMult * atr
+                if dir == 1  and close[j] > open[j]
+                    found := true
+                    break
+                if dir == -1 and close[j] < open[j]
+                    found := true
+                    break
+        found
 
 // Returns max departure candle body / ATR — used by calcScore for 0–3 pts.
 departureStrength(pivOffset) =>
