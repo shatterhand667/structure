@@ -60,6 +60,52 @@ if swingMethod == "Pivot"
         pivLo    := rawLo
         pivLoIdx := bar_index - pivotLength
 
+// ─── Structural Detection ─────────────────────────────────────────────────────
+
+// Pending pivot waiting for confirmation
+var float pendingHi    = na
+var int   pendingHiIdx = na
+var float pendingLo    = na
+var int   pendingLoIdx = na
+
+if swingMethod == "Structural"
+    rawHi = ta.pivothigh(high, pivotLength, pivotLength)
+    rawLo = ta.pivotlow(low,   pivotLength, pivotLength)
+
+    // Register new pending pivots
+    if not na(rawHi)
+        pendingHi    := rawHi
+        pendingHiIdx := bar_index - pivotLength
+    if not na(rawLo)
+        pendingLo    := rawLo
+        pendingLoIdx := bar_index - pivotLength
+
+    // Confirmation threshold
+    atrVal    = ta.atr(14)
+    threshold = confirmUnit == "%" ? confirmPct / 100.0 : na
+
+    // Confirm pending high: price drops enough below it
+    if not na(pendingHi)
+        moved = confirmUnit == "%" ?
+          (pendingHi - close) / pendingHi >= threshold :
+          (pendingHi - close) >= confirmPct * atrVal
+        if moved
+            pivHi        := pendingHi
+            pivHiIdx     := pendingHiIdx
+            pendingHi    := na
+            pendingHiIdx := na
+
+    // Confirm pending low: price rises enough above it
+    if not na(pendingLo)
+        moved = confirmUnit == "%" ?
+          (close - pendingLo) / pendingLo >= threshold :
+          (close - pendingLo) >= confirmPct * atrVal
+        if moved
+            pivLo        := pendingLo
+            pivLoIdx     := pendingLoIdx
+            pendingLo    := na
+            pendingLoIdx := na
+
 // TEMP — remove in Task 5
 if not na(pivHi)
     label.new(pivHiIdx, pivHi, "•",
