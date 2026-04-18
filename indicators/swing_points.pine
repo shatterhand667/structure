@@ -1,0 +1,26 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0
+// at https://mozilla.org/MPL/2.0/
+
+//@version=6
+indicator("Swing Points", overlay=true, max_labels_count=500)
+
+// ─── Swing Detection ────────────────────────────────────────────────────────
+swingMethod  = input.string("Pivot",  "Swing Method",  options=["Pivot", "Structural"])
+pivotLength  = input.int(10,          "Pivot Length",  minval=1, maxval=100,
+                 tooltip="Bars to the left and right of a swing point. Used in Pivot mode.")
+confirmPct   = input.float(1.0,       "Confirm Move",  minval=0.1, step=0.1,
+                 tooltip="Minimum move after pivot to confirm it. Used in Structural mode.")
+confirmUnit  = input.string("%",      "Confirm Unit",  options=["%", "ATR"],
+                 tooltip="Unit for Confirm Move: percentage or ATR(14) multiplier.")
+
+// ─── History ─────────────────────────────────────────────────────────────────
+lookbackDays = input.int(30, "Lookback (days)", minval=1, maxval=3650,
+                 tooltip="Only draw labels for swing points within this many days from today.")
+
+// ─── Labels ───────────────────────────────────────────────────────────────────
+hhColor      = input.color(color.new(#26a69a, 0), "HH Color", group="Label Colors")
+lhColor      = input.color(color.new(#ef5350, 0), "LH Color", group="Label Colors")
+hlColor      = input.color(color.new(#80cbc4, 0), "HL Color", group="Label Colors")
+llColor      = input.color(color.new(#ef9a9a, 0), "LL Color", group="Label Colors")
+labelSize    = input.string("tiny", "Label Size",
+                 options=["tiny", "small", "normal"], group="Label Colors")
