@@ -8,6 +8,7 @@ Indicators for TradingView (Pine Script 6.0) and MetaTrader 5 (MQL5).
 |------|-------------|
 | `indicators/swing_points.pine` | Swing highs/lows labeled as HH, LH, HL, LL — Pivot or Structural detection + Grab and Go scanner |
 | `indicators/swing_points.mq5` | MT5 port — Swing Points + Grab and Go scanner for MetaTrader 5 |
+| `indicators/supply_demand.pine` | Supply & Demand Zones — PFZ/WFZ detection with 0–10 quality scoring (Skorupinski methodology) |
 
 ## Notes
 

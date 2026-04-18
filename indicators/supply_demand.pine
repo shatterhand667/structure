@@ -56,7 +56,7 @@ var box[]    zPfzBox    = array.new_box(0)
 var label[]  zLabel     = array.new_label(0)
 var int[]    zScore     = array.new_int(0)
 
-// ─── Stubs (replaced task by task) ───────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 // Returns true if the pivot bar (pivOffset bars ago) is within the lookback window.
 inLookback(pivOffset) =>
     time[pivOffset] >= timenow - lookbackDays * 86400000
