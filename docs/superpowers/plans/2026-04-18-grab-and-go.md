@@ -1,6 +1,6 @@
 # Grab and Go Scanner — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Extend `indicators/swing_points.pine` with a Grab and Go scanner that detects liquidity sweeps at swing levels, draws a horizontal line to the signal candle, and marks two reversal signal types (pin bar and next-candle close).
 
@@ -23,7 +23,7 @@
 **Files:**
 - Modify: `indicators/swing_points.pine:5`
 
-- [ ] **Step 1: Add `max_lines_count` to indicator declaration (line 5)**
+- [x] **Step 1: Add `max_lines_count` to indicator declaration (line 5)**
 
 Replace:
 ```pine
@@ -34,7 +34,7 @@ With:
 indicator("Swing Points", overlay=true, max_labels_count=500, max_lines_count=500)
 ```
 
-- [ ] **Step 2: Add Grab and Go input group after the Label Colors block (after line 26)**
+- [x] **Step 2: Add Grab and Go input group after the Label Colors block (after line 26)**
 
 ```pine
 // ─── Grab and Go ─────────────────────────────────────────────────────────────
@@ -53,9 +53,9 @@ sigSize       = input.string("small", "Signal Size",            group="Grab and 
                  options=["tiny", "small", "normal"])
 ```
 
-- [ ] **Step 3: Add to TradingView, verify no errors and inputs appear under "Grab and Go" group**
+- [x] **Step 3: Add to TradingView, verify no errors and inputs appear under "Grab and Go" group**
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add indicators/swing_points.pine
@@ -69,7 +69,7 @@ git commit -m "feat: add Grab and Go inputs and update indicator declaration"
 **Files:**
 - Modify: `indicators/swing_points.pine`
 
-- [ ] **Step 1: Add array declarations to the Shared State block (after the existing `var` declarations, before Pivot Detection)**
+- [x] **Step 1: Add array declarations to the Shared State block (after the existing `var` declarations, before Pivot Detection)**
 
 ```pine
 // Sweep level tracking arrays (Grab and Go)
@@ -79,7 +79,7 @@ var sweepLoPrices = array.new_float(0)
 var sweepLoIdxs   = array.new_int(0)
 ```
 
-- [ ] **Step 2: Feed swing highs into sweep array — add inside the Classification block for highs, before `pivHiIdx := na`**
+- [x] **Step 2: Feed swing highs into sweep array — add inside the Classification block for highs, before `pivHiIdx := na`**
 
 Current classification block for highs:
 ```pine
@@ -119,7 +119,7 @@ if not na(pivHi) and not na(pivHiIdx)
     pivHiIdx := na
 ```
 
-- [ ] **Step 3: Feed swing lows into sweep array — same pattern for the lows classification block**
+- [x] **Step 3: Feed swing lows into sweep array — same pattern for the lows classification block**
 
 Replace:
 ```pine
@@ -159,9 +159,9 @@ if not na(pivLo) and not na(pivLoIdx)
     pivLoIdx := na
 ```
 
-- [ ] **Step 4: Add to TradingView, verify no errors. Swing labels should still work normally.**
+- [x] **Step 4: Add to TradingView, verify no errors. Swing labels should still work normally.**
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add indicators/swing_points.pine
@@ -175,7 +175,7 @@ git commit -m "feat: track swing levels in sweep arrays"
 **Files:**
 - Modify: `indicators/swing_points.pine`
 
-- [ ] **Step 1: Add Signal 2 state variables to the Shared State block (after sweep arrays)**
+- [x] **Step 1: Add Signal 2 state variables to the Shared State block (after sweep arrays)**
 
 ```pine
 // Signal 2 pending state
@@ -184,7 +184,7 @@ var float s2SigHigh = na   // signal candle high
 var float s2SigLow  = na   // signal candle low
 ```
 
-- [ ] **Step 2: Add sweep detection section at the end of the file**
+- [x] **Step 2: Add sweep detection section at the end of the file**
 
 ```pine
 // ─── Grab and Go ──────────────────────────────────────────────────────────────
@@ -257,18 +257,18 @@ while loI < array.size(sweepLoPrices)
         loI += 1
 ```
 
-- [ ] **Step 3: Add to TradingView, verify no compile errors**
+- [x] **Step 3: Add to TradingView, verify no compile errors**
 
 Expected: compiles cleanly. Swing labels unchanged.
 
-- [ ] **Step 4: Test — find a visible swing high on chart, wait or scroll to a candle that swept it**
+- [x] **Step 4: Test — find a visible swing high on chart, wait or scroll to a candle that swept it**
 
 Expected:
 - A horizontal line appears from the swing high to the sweeping candle
 - If the sweeping candle has a long upper wick — a red triangle appears above it
 - If next candle closes below 50% of signal candle range — a red triangle appears above that candle
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add indicators/swing_points.pine
@@ -282,29 +282,29 @@ git commit -m "feat: sweep detection, line drawing, S1 pin bar, S2 next candle"
 **Files:**
 - Modify: `indicators/swing_points.pine`
 
-- [ ] **Step 1: Review full file — check for any leftover issues**
+- [x] **Step 1: Review full file — check for any leftover issues**
 
 Verify:
 - `max_lines_count=500` present in `indicator()` declaration
 - No dead variables or duplicate declarations
 - All input groups clearly separated with comments
 
-- [ ] **Step 2: Test Show S1 / Show S2 toggles**
+- [x] **Step 2: Test Show S1 / Show S2 toggles**
 
 Expected:
 - Disabling Show S1 removes pin bar triangles, lines still appear
 - Disabling Show S2 removes next-candle triangles, lines still appear
 - Both can be disabled simultaneously — only lines remain
 
-- [ ] **Step 3: Test Max Sweep Lines = 1 (edge case)**
+- [x] **Step 3: Test Max Sweep Lines = 1 (edge case)**
 
 Expected: only the most recent swing level tracked, older ones ignored.
 
-- [ ] **Step 4: Test color inputs — change bullish/bearish colors**
+- [x] **Step 4: Test color inputs — change bullish/bearish colors**
 
 Expected: lines and triangles update to match.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add indicators/swing_points.pine
