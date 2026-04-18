@@ -9,9 +9,9 @@ swingMethod  = input.string("Pivot",  "Swing Method",  options=["Pivot", "Struct
 pivotLength  = input.int(10,          "Pivot Length",  minval=1, maxval=100,
                  tooltip="Bars to the left and right of a swing point. Used in Pivot mode.")
 confirmPct   = input.float(1.0,       "Confirm Move",  minval=0.1, step=0.1,
-                 tooltip="Minimum move after pivot to confirm it. Used in Structural mode.")
+                 tooltip="Structural mode only. How far price must move away from the pivot before it is confirmed as a real swing. E.g. 1.0 with unit '%' means price must drop 1% below a swing high (or rise 1% above a swing low) before the label is drawn.")
 confirmUnit  = input.string("%",      "Confirm Unit",  options=["%", "ATR"],
-                 tooltip="Unit for Confirm Move: percentage or ATR(14) multiplier.")
+                 tooltip="Structural mode only. Unit for Confirm Move. '%' = percentage of the pivot price. 'ATR' = multiple of ATR(14). Higher values = fewer but stronger swing points.")
 
 // ─── History ─────────────────────────────────────────────────────────────────
 lookbackDays = input.int(30, "Lookback (days)", minval=1, maxval=3650,
