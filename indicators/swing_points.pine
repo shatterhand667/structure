@@ -39,6 +39,10 @@ bearishColor  = input.color(color.new(#ef5350, 0), "Bearish Color", group="Grab 
                   tooltip="Color for bearish signals and lines (sweep of a high, reversal down).")
 sigSize       = input.string("small", "Signal Size",             group="Grab and Go",
                   options=["tiny", "small", "normal"])
+sweepLineStyle = input.string("Solid", "Sweep Line Style",        group="Grab and Go",
+                  options=["Solid", "Dashed", "Dotted"])
+sweepLineWidth = input.int(1,          "Sweep Line Width",         group="Grab and Go",
+                  minval=1, maxval=4)
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +59,13 @@ sizeConst(s) =>
         "normal" => size.normal
         =>          size.tiny
 
+// Maps line style string to Pine line style constant
+lineStyleConst(s) =>
+    switch s
+        "Dashed"  => line.style_dashed
+        "Dotted"  => line.style_dotted
+        =>           line.style_solid
+
 // ─── Shared State ─────────────────────────────────────────────────────────────
 var float prevHigh = na       // last confirmed swing high price
 var float prevLow  = na       // last confirmed swing low price
@@ -64,10 +75,11 @@ float     pivHi    = na       // set each bar when a high is confirmed
 float     pivLo    = na       // set each bar when a low is confirmed
 
 // Sweep level tracking arrays (Grab and Go)
+// Times stored as ms timestamps (xloc.bar_time) so lines span gaps correctly
 var sweepHiPrices = array.new_float(0)
-var sweepHiIdxs   = array.new_int(0)
+var sweepHiTimes  = array.new_int(0)
 var sweepLoPrices = array.new_float(0)
-var sweepLoIdxs   = array.new_int(0)
+var sweepLoTimes  = array.new_int(0)
 
 // Signal 2 pending state
 var int   s2Dir         = 0    // 1 = bullish pending, -1 = bearish pending, 0 = none
@@ -145,12 +157,12 @@ if not na(pivHi) and not na(pivHiIdx)
           textcolor = clr,
           style     = label.style_label_down,
           size      = sizeConst(labelSize))
-    // Feed sweep tracker
+    // Feed sweep tracker (store bar time for gap-safe line drawing)
     array.push(sweepHiPrices, pivHi)
-    array.push(sweepHiIdxs,   pivHiIdx)
+    array.push(sweepHiTimes,  time[bar_index - pivHiIdx])
     if array.size(sweepHiPrices) > maxSweepLines
         array.shift(sweepHiPrices)
-        array.shift(sweepHiIdxs)
+        array.shift(sweepHiTimes)
     prevHigh := pivHi
     pivHiIdx := na
 
@@ -164,12 +176,12 @@ if not na(pivLo) and not na(pivLoIdx)
           textcolor = clr,
           style     = label.style_label_up,
           size      = sizeConst(labelSize))
-    // Feed sweep tracker
+    // Feed sweep tracker (store bar time for gap-safe line drawing)
     array.push(sweepLoPrices, pivLo)
-    array.push(sweepLoIdxs,   pivLoIdx)
+    array.push(sweepLoTimes,  time[bar_index - pivLoIdx])
     if array.size(sweepLoPrices) > maxSweepLines
         array.shift(sweepLoPrices)
-        array.shift(sweepLoIdxs)
+        array.shift(sweepLoTimes)
     prevLow  := pivLo
     pivLoIdx := na
 
@@ -204,11 +216,13 @@ if s2Dir == -1
 int hiI = 0
 while hiI < array.size(sweepHiPrices)
     swingPrice = array.get(sweepHiPrices, hiI)
-    swingIdx   = array.get(sweepHiIdxs,   hiI)
+    swingTime  = array.get(sweepHiTimes,  hiI)
     if high > swingPrice
-        line.new(swingIdx, swingPrice, bar_index, swingPrice,
+        line.new(x1=swingTime, y1=swingPrice, x2=time, y2=swingPrice,
+          xloc   = xloc.bar_time,
           color  = bearishColor,
-          width  = 1,
+          style  = lineStyleConst(sweepLineStyle),
+          width  = sweepLineWidth,
           extend = extend.none)
         // Signal 1 — pin bar (upper wick >= 65% of range)
         if showS1 and (high - low) > 0
@@ -223,7 +237,7 @@ while hiI < array.size(sweepHiPrices)
         s2SigLow     := low
         s2BarsWaited := 0
         array.remove(sweepHiPrices, hiI)
-        array.remove(sweepHiIdxs,   hiI)
+        array.remove(sweepHiTimes,  hiI)
     else
         hiI += 1
 
@@ -231,11 +245,13 @@ while hiI < array.size(sweepHiPrices)
 int loI = 0
 while loI < array.size(sweepLoPrices)
     swingPrice = array.get(sweepLoPrices, loI)
-    swingIdx   = array.get(sweepLoIdxs,   loI)
+    swingTime  = array.get(sweepLoTimes,  loI)
     if low < swingPrice
-        line.new(swingIdx, swingPrice, bar_index, swingPrice,
+        line.new(x1=swingTime, y1=swingPrice, x2=time, y2=swingPrice,
+          xloc   = xloc.bar_time,
           color  = bullishColor,
-          width  = 1,
+          style  = lineStyleConst(sweepLineStyle),
+          width  = sweepLineWidth,
           extend = extend.none)
         // Signal 1 — pin bar (lower wick >= 65% of range)
         if showS1 and (high - low) > 0
@@ -250,6 +266,6 @@ while loI < array.size(sweepLoPrices)
         s2SigLow     := low
         s2BarsWaited := 0
         array.remove(sweepLoPrices, loI)
-        array.remove(sweepLoIdxs,   loI)
+        array.remove(sweepLoTimes,  loI)
     else
         loI += 1
