@@ -186,7 +186,7 @@ scoreLabel[]    // label ID
 score[]         // current score (recalculated on mitigation)
 ```
 
-Max active zones bounded by `max_boxes_count=200` (100 zones × 2 boxes each).
+Max active zones bounded by `max_boxes_count=500` (250 zones × 2 boxes each). Higher limit needed when `showHistory=true` keeps breached zones on chart.
 
 ---
 
