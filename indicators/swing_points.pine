@@ -24,3 +24,26 @@ hlColor      = input.color(color.new(#80cbc4, 0), "HL Color", group="Label Color
 llColor      = input.color(color.new(#ef9a9a, 0), "LL Color", group="Label Colors")
 labelSize    = input.string("tiny", "Label Size",
                  options=["tiny", "small", "normal"], group="Label Colors")
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// Returns true if the bar at absolute bar_index `bi` is within the lookback window.
+// time[bar_index - bi] gives the time of that bar (Pine Script series indexing).
+inLookback(bi) =>
+    time[bar_index - bi] >= timenow - lookbackDays * 86400000
+
+// Maps label size string to Pine size constant
+sizeConst(s) =>
+    switch s
+        "tiny"   => size.tiny
+        "small"  => size.small
+        "normal" => size.normal
+        =>          size.tiny
+
+// ─── Shared State ─────────────────────────────────────────────────────────────
+var float prevHigh = na       // last confirmed swing high price
+var float prevLow  = na       // last confirmed swing low price
+var int   pivHiIdx = na       // bar_index of the confirmed swing high
+var int   pivLoIdx = na       // bar_index of the confirmed swing low
+float     pivHi    = na       // set each bar when a high is confirmed
+float     pivLo    = na       // set each bar when a low is confirmed
