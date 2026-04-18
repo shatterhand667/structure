@@ -29,6 +29,7 @@ demandColor = input.color(color.new(#26a69a, 0), "Demand Color", group="Visual")
 supplyColor = input.color(color.new(#ef5350, 0), "Supply Color", group="Visual")
 showLabels  = input.bool(true, "Show Labels", group="Visual",
                tooltip="Show score label on the right edge of each zone.")
+labelSize   = input.string("normal", "Label Size", options=["tiny", "small", "normal", "large", "huge"], group="Visual")
 showWFZ     = input.bool(true,  "Show WFZ",     group="Visual",
                tooltip="Show the Wider Fresh Zone (full base range) as a faded outer box.")
 showHistory = input.bool(false, "Show History",  group="Visual",
@@ -64,6 +65,13 @@ var int[]    zInitScore = array.new_int(0)
 // Returns true if the pivot bar (pivOffset bars ago) is within the lookback window.
 inLookback(pivOffset) =>
     time[pivOffset] >= timenow - lookbackDays * 86400000
+
+// Converts labelSize string input to Pine size constant.
+toLabelSize(s) =>
+    s == "tiny"   ? size.tiny   :
+     s == "small"  ? size.small  :
+     s == "large"  ? size.large  :
+     s == "huge"   ? size.huge   : size.normal
 
 // Base opacity (transparency %) from score and touch count. Higher = more faded.
 zoneOpacity(score, state) =>
@@ -189,7 +197,7 @@ createZone(dir, pT, pB, wT, wB, score) =>
              color     = color.new(baseClr, 70),
              textcolor = color.new(baseClr, 0),
              style     = lblStyle,
-             size      = size.small)
+             size      = toLabelSize(labelSize))
 
     array.push(zoneType,   dir == 1 ? "D" : "S")
     array.push(zoneState,  FRESH)
