@@ -47,3 +47,23 @@ var int   pivHiIdx = na       // bar_index of the confirmed swing high
 var int   pivLoIdx = na       // bar_index of the confirmed swing low
 float     pivHi    = na       // set each bar when a high is confirmed
 float     pivLo    = na       // set each bar when a low is confirmed
+
+// ─── Pivot Detection ──────────────────────────────────────────────────────────
+
+if swingMethod == "Pivot"
+    rawHi = ta.pivothigh(high, pivotLength, pivotLength)
+    rawLo = ta.pivotlow(low,   pivotLength, pivotLength)
+    if not na(rawHi)
+        pivHi    := rawHi
+        pivHiIdx := bar_index - pivotLength
+    if not na(rawLo)
+        pivLo    := rawLo
+        pivLoIdx := bar_index - pivotLength
+
+// TEMP — remove in Task 5
+if not na(pivHi)
+    label.new(pivHiIdx, pivHi, "•",
+      color=color.new(color.white, 100), textcolor=color.yellow, style=label.style_label_down)
+if not na(pivLo)
+    label.new(pivLoIdx, pivLo, "•",
+      color=color.new(color.white, 100), textcolor=color.yellow, style=label.style_label_up)
