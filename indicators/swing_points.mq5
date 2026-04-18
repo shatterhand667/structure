@@ -88,8 +88,82 @@ int OnCalculate(const int rates_total,
                 const long     &volume[],
                 const int      &spread[])
 {
-    // Stub — tasks fill this in
+    if(rates_total < PivotLength * 2 + 1) return 0;
+
+    if(prev_calculated == 0)
+    {
+        ObjectsDeleteAll(0, "SP_");
+        ResetState();
+    }
+
+    int start = (prev_calculated == 0) ? PivotLength : MathMax(prev_calculated - 1, PivotLength);
+
+    datetime lookbackCutoff = TimeCurrent() - (datetime)(LookbackDays * 86400);
+
+    for(int i = start; i < rates_total - PivotLength; i++)
+    {
+        ProcessBar(i, rates_total, time, open, high, low, close, lookbackCutoff);
+    }
+
+    ChartRedraw(0);
     return(rates_total);
+}
+
+//+------------------------------------------------------------------+
+void ProcessBar(int i, int rates_total,
+                const datetime &time[],
+                const double   &open[],
+                const double   &high[],
+                const double   &low[],
+                const double   &close[],
+                datetime        lookbackCutoff)
+{
+    double pivHi    = EMPTY_VALUE;
+    int    pivHiBar = -1;
+    double pivLo    = EMPTY_VALUE;
+    int    pivLoBar = -1;
+
+    //--- Pivot mode detection
+    if(SwingMethod == Pivot)
+    {
+        if(IsPivotHigh(i, high, PivotLength))
+        {
+            pivHi    = high[i];
+            pivHiBar = i;
+        }
+        if(IsPivotLow(i, low, PivotLength))
+        {
+            pivLo    = low[i];
+            pivLoBar = i;
+        }
+    }
+
+    //--- Structural mode detection (Task 4)
+
+    //--- Classification + labels
+    if(pivHi != EMPTY_VALUE && pivHiBar >= 0)
+    {
+        bool isHH  = (prevHigh == EMPTY_VALUE || pivHi >= prevHigh);
+        string lbl = isHH ? "HH" : "LH";
+        color  clr = isHH ? HHColor : LHColor;
+        string name = "SP_LBL_" + IntegerToString((long)time[pivHiBar]);
+        if(time[pivHiBar] >= lookbackCutoff)
+            CreateSwingLabel(name, time[pivHiBar], high[pivHiBar], lbl, clr, true);
+        //--- Feed sweep tracker (Task 5)
+        prevHigh = pivHi;
+    }
+
+    if(pivLo != EMPTY_VALUE && pivLoBar >= 0)
+    {
+        bool isLL  = (prevLow == EMPTY_VALUE || pivLo <= prevLow);
+        string lbl = isLL ? "LL" : "HL";
+        color  clr = isLL ? LLColor : HLColor;
+        string name = "SP_LBL_" + IntegerToString((long)time[pivLoBar]);
+        if(time[pivLoBar] >= lookbackCutoff)
+            CreateSwingLabel(name, time[pivLoBar], low[pivLoBar], lbl, clr, false);
+        //--- Feed sweep tracker (Task 5)
+        prevLow = pivLo;
+    }
 }
 
 //+------------------------------------------------------------------+
