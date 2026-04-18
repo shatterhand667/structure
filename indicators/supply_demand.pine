@@ -108,9 +108,46 @@ findBase(pivOffset, dir) =>
             pHi := math.max(close[lastJ], open[lastJ])
             pLo := low[lastJ]
         [pHi, pLo, wHi, wLo, bLen, tight]
-validateDeparture(pivOffset, dir)                        => false
-departureStrength(pivOffset)                             => float(0)
-detectBOS(pivOffset, dir)                                => false
+// True if at least one bar between the pivot and now is a strong directional candle.
+validateDeparture(pivOffset, dir) =>
+    atr   = ta.atr(14)
+    found = false
+    for j = 1 to pivOffset - 1
+        cBody = math.abs(close[j] - open[j])
+        if cBody > departureBodyMult * atr
+            if dir == 1  and close[j] > open[j]
+                found := true
+                break
+            if dir == -1 and close[j] < open[j]
+                found := true
+                break
+    found
+
+// Returns max departure candle body / ATR — used by calcScore for 0–3 pts.
+departureStrength(pivOffset) =>
+    atr     = ta.atr(14)
+    maxBody = float(0)
+    for j = 1 to pivOffset - 1
+        cBody = math.abs(close[j] - open[j])
+        if cBody > maxBody
+            maxBody := cBody
+    atr > 0 ? maxBody / atr : float(0)
+
+// Break of Structure: did the departure close beyond the previous swing level?
+// Demand: any departure close > prevHi1. Supply: any departure close < prevLo1.
+detectBOS(pivOffset, dir) =>
+    bos = false
+    if dir == 1 and not na(prevHi1)
+        for j = 1 to pivOffset - 1
+            if close[j] > prevHi1
+                bos := true
+                break
+    else if dir == -1 and not na(prevLo1)
+        for j = 1 to pivOffset - 1
+            if close[j] < prevLo1
+                bos := true
+                break
+    bos
 calcScore(depStr, bos, state, bLen, tight, trendAligned) => 0
 createZone(dir, pT, pB, wT, wB, score)                  => na
 updateZones()                                            => na
