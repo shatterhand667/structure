@@ -123,6 +123,33 @@ void ProcessBar(int i, int rates_total,
     double pivLo    = EMPTY_VALUE;
     int    pivLoBar = -1;
 
+    //--- Signal 2: check 1st and 2nd candle after signal candle
+    if(s2Dir != 0)
+    {
+        s2BarsWaited++;
+        double mid = s2SigLow + (s2SigHigh - s2SigLow) * 0.5;
+        bool   s2Hit = (s2Dir == 1) ? close[i] > mid : close[i] < mid;
+        if(ShowS2 && s2Hit)
+        {
+            string s2Name = "SP_S2_" + IntegerToString((long)time[i]);
+            if(s2Dir == 1)
+            {
+                ObjectCreate(0, s2Name, OBJ_ARROW_UP, 0, time[i], low[i]);
+                ObjectSetInteger(0, s2Name, OBJPROP_COLOR, BullishColor);
+            }
+            else
+            {
+                ObjectCreate(0, s2Name, OBJ_ARROW_DOWN, 0, time[i], high[i]);
+                ObjectSetInteger(0, s2Name, OBJPROP_COLOR, BearishColor);
+            }
+            ObjectSetInteger(0, s2Name, OBJPROP_WIDTH,      SigArrowSize);
+            ObjectSetInteger(0, s2Name, OBJPROP_SELECTABLE, false);
+            s2Dir = 0;
+        }
+        else if(s2BarsWaited >= 2)
+            s2Dir = 0;
+    }
+
     //--- Pivot mode detection
     if(SwingMethod == Pivot)
     {
@@ -226,7 +253,24 @@ void ProcessBar(int i, int rates_total,
             // Stop the line at the signal candle
             ObjectSetInteger(0, sweepHiLineNames[hiIdx], OBJPROP_TIME,      1, (long)time[i]);
             ObjectSetInteger(0, sweepHiLineNames[hiIdx], OBJPROP_RAY_RIGHT, false);
-            // Signal 1 + S2 state — Task 6
+            // Signal 1 — pin bar: upper wick >= 65% of range
+            if(ShowS1 && (high[i] - low[i]) > 0)
+            {
+                double upperWick = high[i] - MathMax(open[i], close[i]);
+                if(upperWick / (high[i] - low[i]) >= 0.65)
+                {
+                    string s1Name = "SP_S1_HI_" + IntegerToString((long)time[i]);
+                    ObjectCreate(0, s1Name, OBJ_ARROW_DOWN, 0, time[i], high[i]);
+                    ObjectSetInteger(0, s1Name, OBJPROP_COLOR,      BearishColor);
+                    ObjectSetInteger(0, s1Name, OBJPROP_WIDTH,      SigArrowSize);
+                    ObjectSetInteger(0, s1Name, OBJPROP_SELECTABLE, false);
+                }
+            }
+            // Set Signal 2 state
+            s2Dir        = -1;
+            s2SigHigh    = high[i];
+            s2SigLow     = low[i];
+            s2BarsWaited = 0;
             RemoveSweepHi(hiIdx);
         }
         else hiIdx++;
@@ -240,7 +284,24 @@ void ProcessBar(int i, int rates_total,
         {
             ObjectSetInteger(0, sweepLoLineNames[loIdx], OBJPROP_TIME,      1, (long)time[i]);
             ObjectSetInteger(0, sweepLoLineNames[loIdx], OBJPROP_RAY_RIGHT, false);
-            // Signal 1 + S2 state — Task 6
+            // Signal 1 — pin bar: lower wick >= 65% of range
+            if(ShowS1 && (high[i] - low[i]) > 0)
+            {
+                double lowerWick = MathMin(open[i], close[i]) - low[i];
+                if(lowerWick / (high[i] - low[i]) >= 0.65)
+                {
+                    string s1Name = "SP_S1_LO_" + IntegerToString((long)time[i]);
+                    ObjectCreate(0, s1Name, OBJ_ARROW_UP, 0, time[i], low[i]);
+                    ObjectSetInteger(0, s1Name, OBJPROP_COLOR,      BullishColor);
+                    ObjectSetInteger(0, s1Name, OBJPROP_WIDTH,      SigArrowSize);
+                    ObjectSetInteger(0, s1Name, OBJPROP_SELECTABLE, false);
+                }
+            }
+            // Set Signal 2 state
+            s2Dir        = 1;
+            s2SigHigh    = high[i];
+            s2SigLow     = low[i];
+            s2BarsWaited = 0;
             RemoveSweepLo(loIdx);
         }
         else loIdx++;
