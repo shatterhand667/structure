@@ -257,4 +257,45 @@ updateZones() =>
 
         i += 1
 
-// ─── Main (filled in Task 8) ──────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+rawHi = ta.pivothigh(high, pivotLength, pivotLength)
+rawLo = ta.pivotlow(low,   pivotLength, pivotLength)
+
+// Update trend tracking BEFORE zone creation so BOS check uses correct reference levels.
+if not na(rawHi)
+    prevHi2 := prevHi1
+    prevHi1 := rawHi
+
+if not na(rawLo)
+    prevLo2 := prevLo1
+    prevLo1 := rawLo
+
+// Attempt to create a SUPPLY zone on a confirmed pivot high
+if not na(rawHi) and inLookback(pivotLength)
+    [pT, pB, wT, wB, bLen, tight] = findBase(pivotLength, -1)
+    if not na(pT) and validateDeparture(pivotLength, -1)
+        depStr       = departureStrength(pivotLength)
+        bos          = detectBOS(pivotLength, -1)
+        trend        = currentTrend()
+        trendAligned = trend == -1
+        showZone     = not trendFilter or trend <= 0
+        scr          = calcScore(depStr, bos, FRESH, bLen, tight, trendAligned)
+        if scr >= minScore and showZone
+            createZone(-1, pT, pB, wT, wB, scr)
+
+// Attempt to create a DEMAND zone on a confirmed pivot low
+if not na(rawLo) and inLookback(pivotLength)
+    [pT, pB, wT, wB, bLen, tight] = findBase(pivotLength, 1)
+    if not na(pT) and validateDeparture(pivotLength, 1)
+        depStr       = departureStrength(pivotLength)
+        bos          = detectBOS(pivotLength, 1)
+        trend        = currentTrend()
+        trendAligned = trend == 1
+        showZone     = not trendFilter or trend >= 0
+        scr          = calcScore(depStr, bos, FRESH, bLen, tight, trendAligned)
+        if scr >= minScore and showZone
+            createZone(1, pT, pB, wT, wB, scr)
+
+// Update all existing zones every bar
+updateZones()
