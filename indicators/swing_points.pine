@@ -171,3 +171,72 @@ if not na(pivLo) and not na(pivLoIdx)
         array.shift(sweepLoIdxs)
     prevLow  := pivLo
     pivLoIdx := na
+
+// ─── Grab and Go ──────────────────────────────────────────────────────────────
+
+// Signal 2: check previous bar's sweep against current close (reset s2Dir regardless of showS2)
+if s2Dir == 1
+    if showS2 and close > s2SigLow + (s2SigHigh - s2SigLow) * 0.5
+        label.new(bar_index, low, "",
+          color = bullishColor, style = label.style_triangleup,
+          size  = sizeConst(sigSize))
+    s2Dir := 0
+
+if s2Dir == -1
+    if showS2 and close < s2SigHigh - (s2SigHigh - s2SigLow) * 0.5
+        label.new(bar_index, high, "",
+          color = bearishColor, style = label.style_triangledown,
+          size  = sizeConst(sigSize))
+    s2Dir := 0
+
+// Detect high sweeps
+int hiI = 0
+while hiI < array.size(sweepHiPrices)
+    swingPrice = array.get(sweepHiPrices, hiI)
+    swingIdx   = array.get(sweepHiIdxs,   hiI)
+    if high > swingPrice
+        line.new(swingIdx, swingPrice, bar_index, swingPrice,
+          color  = bearishColor,
+          width  = 1,
+          extend = extend.none)
+        // Signal 1 — pin bar (upper wick >= 65% of range)
+        if showS1 and (high - low) > 0
+            upperWick = high - math.max(open, close)
+            if upperWick / (high - low) >= 0.65
+                label.new(bar_index, high, "",
+                  color = bearishColor, style = label.style_triangledown,
+                  size  = sizeConst(sigSize))
+        // Set Signal 2 state
+        s2Dir     := -1
+        s2SigHigh := high
+        s2SigLow  := low
+        array.remove(sweepHiPrices, hiI)
+        array.remove(sweepHiIdxs,   hiI)
+    else
+        hiI += 1
+
+// Detect low sweeps
+int loI = 0
+while loI < array.size(sweepLoPrices)
+    swingPrice = array.get(sweepLoPrices, loI)
+    swingIdx   = array.get(sweepLoIdxs,   loI)
+    if low < swingPrice
+        line.new(swingIdx, swingPrice, bar_index, swingPrice,
+          color  = bullishColor,
+          width  = 1,
+          extend = extend.none)
+        // Signal 1 — pin bar (lower wick >= 65% of range)
+        if showS1 and (high - low) > 0
+            lowerWick = math.min(open, close) - low
+            if lowerWick / (high - low) >= 0.65
+                label.new(bar_index, low, "",
+                  color = bullishColor, style = label.style_triangleup,
+                  size  = sizeConst(sigSize))
+        // Set Signal 2 state
+        s2Dir     := 1
+        s2SigHigh := high
+        s2SigLow  := low
+        array.remove(sweepLoPrices, loI)
+        array.remove(sweepLoIdxs,   loI)
+    else
+        loI += 1
