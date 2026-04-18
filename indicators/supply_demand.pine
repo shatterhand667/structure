@@ -197,6 +197,64 @@ createZone(dir, pT, pB, wT, wB, score) =>
     array.push(zPfzBox,    pBox)
     array.push(zLabel,     lbl)
     array.push(zScore,     score)
-updateZones()                                            => na
+// Run every bar. Handles breach removal and touch-state fading for all active zones.
+updateZones() =>
+    i = 0
+    while i < array.size(zoneType)
+        typ     = array.get(zoneType,   i)
+        state   = array.get(zoneState,  i)
+        inside  = array.get(zoneInside, i)
+        wT      = array.get(zWfzTop,    i)
+        wB      = array.get(zWfzBot,    i)
+        wBox    = array.get(zWfzBox,    i)
+        pBox    = array.get(zPfzBox,    i)
+        lbl     = array.get(zLabel,     i)
+        scr     = array.get(zScore,     i)
+        isDmnd  = typ == "D"
+        baseClr = isDmnd ? demandColor : supplyColor
+
+        // Breach: close beyond the far side of WFZ — delete and remove
+        breached = isDmnd ? close < wB : close > wT
+        if breached
+            box.delete(wBox)
+            box.delete(pBox)
+            label.delete(lbl)
+            array.remove(zoneType,   i)
+            array.remove(zoneState,  i)
+            array.remove(zoneInside, i)
+            array.remove(zPfzTop,    i)
+            array.remove(zPfzBot,    i)
+            array.remove(zWfzTop,    i)
+            array.remove(zWfzBot,    i)
+            array.remove(zWfzBox,    i)
+            array.remove(zPfzBox,    i)
+            array.remove(zLabel,     i)
+            array.remove(zScore,     i)
+            continue  // i now points to next element — do not increment
+
+        // Is price inside WFZ this bar?
+        inNow = isDmnd ? low < wT : high > wB
+
+        if not inside and inNow
+            // New entry from outside
+            array.set(zoneInside, i, true)
+            if state < TOUCHED_2
+                newState = state + 1
+                newScr   = math.max(scr - 1, 0)
+                array.set(zoneState, i, newState)
+                array.set(zScore,    i, newScr)
+                newOp  = zoneOpacity(newScr, newState)
+                wNewOp = math.min(newOp + 20, 95)
+                box.set_bgcolor(pBox, color.new(baseClr, newOp))
+                if showWFZ
+                    box.set_bgcolor(wBox, color.new(baseClr, wNewOp))
+                if showLabels
+                    label.set_text(lbl, (isDmnd ? "D " : "S ") + str.tostring(newScr))
+
+        else if inside and not inNow
+            // Price exited zone without breaching
+            array.set(zoneInside, i, false)
+
+        i += 1
 
 // ─── Main (filled in Task 8) ──────────────────────────────────────────────────
