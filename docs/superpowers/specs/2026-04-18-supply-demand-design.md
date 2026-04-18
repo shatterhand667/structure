@@ -27,24 +27,27 @@ Standalone Pine Script 6.0 indicator that automatically detects supply and deman
 
 ```pine
 // ─── Zone Detection
-input int   pivotLength       = 4    // Pivot Length (bars left and right)
-input int   maxBaseCandles    = 2    // Max candles in base (1–5)
-input float baseBodyMult      = 1.0  // Base candle body < X × ATR(14)
-input float departureBodyMult = 0.8  // Departure candle body > X × ATR(14)
+input int   pivotLength        = 4     // Pivot Length (bars left and right)
+input int   maxBaseCandles     = 2     // Max candles in base (1–5)
+input bool  useBaseFilter      = true  // Enable base body size filter
+input float baseBodyMult       = 1.0   // Base candle body < X × ATR(14)
+input bool  useDepartureFilter = true  // Enable departure strength filter
+input float departureBodyMult  = 0.8   // Departure candle body > X × ATR(14)
 
 // ─── History
-input int   lookbackDays      = 365  // Only draw zones within this many days
+input int   lookbackDays      = 365   // Only draw zones within this many days
 
 // ─── Filtering
-input int   minScore          = 3    // Hide zones below this score (0 = show all)
+input int   minScore          = 3     // Hide zones below this score (0 = show all)
 input bool  trendFilter       = false // Show only zones aligned with current trend
 
 // ─── Visual
-input color demandColor       = #26a69a  // Demand zone color
-input color supplyColor       = #ef5350  // Supply zone color
-input bool  showLabels        = true     // Show score labels on zones
-input bool  showWFZ           = true     // Show Wider Fresh Zone box
-input bool  showHistory       = false    // Keep breached zones as faded outlines
+input color demandColor       = #26a69a           // Demand zone color
+input color supplyColor       = #ef5350           // Supply zone color
+input bool  showLabels        = true              // Show score labels on zones
+input string labelSize        = "normal"          // Label size (tiny/small/normal/large/huge)
+input bool  showWFZ           = true              // Show Wider Fresh Zone box
+input bool  showHistory       = false             // Keep breached zones as faded outlines
 ```
 
 ---
