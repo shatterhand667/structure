@@ -2,7 +2,7 @@
 // at https://mozilla.org/MPL/2.0/
 
 //@version=6
-indicator("Swing Points", overlay=true, max_labels_count=500)
+indicator("Swing Points", overlay=true, max_labels_count=500, max_lines_count=500)
 
 // ─── Swing Detection ────────────────────────────────────────────────────────
 swingMethod  = input.string("Pivot",  "Swing Method",  options=["Pivot", "Structural"])
@@ -24,6 +24,21 @@ hlColor      = input.color(color.new(#80cbc4, 0), "HL Color", group="Label Color
 llColor      = input.color(color.new(#ef9a9a, 0), "LL Color", group="Label Colors")
 labelSize    = input.string("tiny", "Label Size",
                  options=["tiny", "small", "normal"], group="Label Colors")
+
+// ─── Grab and Go ─────────────────────────────────────────────────────────────
+showS1        = input.bool(true,  "Show Signal 1 (Pin Bar)",     group="Grab and Go",
+                  tooltip="Mark the signal candle when its wick is 65%+ of the candle range, in the direction of the sweep.")
+showS2        = input.bool(true,  "Show Signal 2 (Next Candle)", group="Grab and Go",
+                  tooltip="Mark the candle after the signal candle when it closes past the 50% level of the signal candle's range, reversing the sweep direction.")
+maxSweepLines = input.int(5,      "Max Sweep Lines",             group="Grab and Go",
+                  minval=1, maxval=20,
+                  tooltip="How many recent swing levels to watch for sweeps. Oldest levels are dropped when the limit is reached.")
+bullishColor  = input.color(color.new(#26a69a, 0), "Bullish Color", group="Grab and Go",
+                  tooltip="Color for bullish signals and lines (sweep of a low, reversal up).")
+bearishColor  = input.color(color.new(#ef5350, 0), "Bearish Color", group="Grab and Go",
+                  tooltip="Color for bearish signals and lines (sweep of a high, reversal down).")
+sigSize       = input.string("small", "Signal Size",             group="Grab and Go",
+                  options=["tiny", "small", "normal"])
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
