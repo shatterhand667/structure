@@ -75,11 +75,11 @@ float     pivHi    = na       // set each bar when a high is confirmed
 float     pivLo    = na       // set each bar when a low is confirmed
 
 // Sweep level tracking arrays (Grab and Go)
-// Times stored as ms timestamps (xloc.bar_time) so lines span gaps correctly
+// Line refs drawn with extend.right at swing detection, stopped at sweep bar
 var sweepHiPrices = array.new_float(0)
-var sweepHiTimes  = array.new_int(0)
+var sweepHiLines  = array.new<line>(0)
 var sweepLoPrices = array.new_float(0)
-var sweepLoTimes  = array.new_int(0)
+var sweepLoLines  = array.new<line>(0)
 
 // Signal 2 pending state
 var int   s2Dir         = 0    // 1 = bullish pending, -1 = bearish pending, 0 = none
@@ -157,12 +157,17 @@ if not na(pivHi) and not na(pivHiIdx)
           textcolor = clr,
           style     = label.style_label_down,
           size      = sizeConst(labelSize))
-    // Feed sweep tracker (store bar time for gap-safe line drawing)
+    // Feed sweep tracker — draw extending line immediately, stop it at sweep bar
+    newHiLine = line.new(pivHiIdx, pivHi, pivHiIdx, pivHi,
+        extend = extend.right,
+        color  = bearishColor,
+        style  = lineStyleConst(sweepLineStyle),
+        width  = sweepLineWidth)
     array.push(sweepHiPrices, pivHi)
-    array.push(sweepHiTimes,  time[bar_index - pivHiIdx])
+    array.push(sweepHiLines,  newHiLine)
     if array.size(sweepHiPrices) > maxSweepLines
+        line.delete(array.shift(sweepHiLines))
         array.shift(sweepHiPrices)
-        array.shift(sweepHiTimes)
     prevHigh := pivHi
     pivHiIdx := na
 
@@ -176,12 +181,17 @@ if not na(pivLo) and not na(pivLoIdx)
           textcolor = clr,
           style     = label.style_label_up,
           size      = sizeConst(labelSize))
-    // Feed sweep tracker (store bar time for gap-safe line drawing)
+    // Feed sweep tracker — draw extending line immediately, stop it at sweep bar
+    newLoLine = line.new(pivLoIdx, pivLo, pivLoIdx, pivLo,
+        extend = extend.right,
+        color  = bullishColor,
+        style  = lineStyleConst(sweepLineStyle),
+        width  = sweepLineWidth)
     array.push(sweepLoPrices, pivLo)
-    array.push(sweepLoTimes,  time[bar_index - pivLoIdx])
+    array.push(sweepLoLines,  newLoLine)
     if array.size(sweepLoPrices) > maxSweepLines
+        line.delete(array.shift(sweepLoLines))
         array.shift(sweepLoPrices)
-        array.shift(sweepLoTimes)
     prevLow  := pivLo
     pivLoIdx := na
 
@@ -216,14 +226,11 @@ if s2Dir == -1
 int hiI = 0
 while hiI < array.size(sweepHiPrices)
     swingPrice = array.get(sweepHiPrices, hiI)
-    swingTime  = array.get(sweepHiTimes,  hiI)
+    sweepLine  = array.get(sweepHiLines,  hiI)
     if high > swingPrice
-        line.new(x1=swingTime, y1=swingPrice, x2=time, y2=swingPrice,
-          xloc   = xloc.bar_time,
-          color  = bearishColor,
-          style  = lineStyleConst(sweepLineStyle),
-          width  = sweepLineWidth,
-          extend = extend.none)
+        // Stop the extending line at the signal candle
+        line.set_x2(sweepLine, bar_index)
+        line.set_extend(sweepLine, extend.none)
         // Signal 1 — pin bar (upper wick >= 65% of range)
         if showS1 and (high - low) > 0
             upperWick = high - math.max(open, close)
@@ -237,7 +244,7 @@ while hiI < array.size(sweepHiPrices)
         s2SigLow     := low
         s2BarsWaited := 0
         array.remove(sweepHiPrices, hiI)
-        array.remove(sweepHiTimes,  hiI)
+        array.remove(sweepHiLines,  hiI)
     else
         hiI += 1
 
@@ -245,14 +252,11 @@ while hiI < array.size(sweepHiPrices)
 int loI = 0
 while loI < array.size(sweepLoPrices)
     swingPrice = array.get(sweepLoPrices, loI)
-    swingTime  = array.get(sweepLoTimes,  loI)
+    sweepLine  = array.get(sweepLoLines,  loI)
     if low < swingPrice
-        line.new(x1=swingTime, y1=swingPrice, x2=time, y2=swingPrice,
-          xloc   = xloc.bar_time,
-          color  = bullishColor,
-          style  = lineStyleConst(sweepLineStyle),
-          width  = sweepLineWidth,
-          extend = extend.none)
+        // Stop the extending line at the signal candle
+        line.set_x2(sweepLine, bar_index)
+        line.set_extend(sweepLine, extend.none)
         // Signal 1 — pin bar (lower wick >= 65% of range)
         if showS1 and (high - low) > 0
             lowerWick = math.min(open, close) - low
@@ -266,6 +270,6 @@ while loI < array.size(sweepLoPrices)
         s2SigLow     := low
         s2BarsWaited := 0
         array.remove(sweepLoPrices, loI)
-        array.remove(sweepLoTimes,  loI)
+        array.remove(sweepLoLines,  loI)
     else
         loI += 1
