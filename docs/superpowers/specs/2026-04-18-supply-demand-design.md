@@ -27,23 +27,24 @@ Standalone Pine Script 6.0 indicator that automatically detects supply and deman
 
 ```pine
 // ─── Zone Detection
-input int   pivotLength       = 5    // Pivot Length (bars left and right)
-input int   maxBaseCandles    = 4    // Max candles in base (1–5)
-input float baseBodyMult      = 0.5  // Base candle body < X × ATR(14)
-input float departureBodyMult = 1.5  // Departure candle body > X × ATR(14)
+input int   pivotLength       = 4    // Pivot Length (bars left and right)
+input int   maxBaseCandles    = 2    // Max candles in base (1–5)
+input float baseBodyMult      = 1.0  // Base candle body < X × ATR(14)
+input float departureBodyMult = 0.8  // Departure candle body > X × ATR(14)
 
 // ─── History
-input int   lookbackDays      = 60   // Only draw zones within this many days
+input int   lookbackDays      = 365  // Only draw zones within this many days
 
 // ─── Filtering
 input int   minScore          = 3    // Hide zones below this score (0 = show all)
-input bool  trendFilter       = true // Show only zones aligned with current trend
+input bool  trendFilter       = false // Show only zones aligned with current trend
 
 // ─── Visual
 input color demandColor       = #26a69a  // Demand zone color
 input color supplyColor       = #ef5350  // Supply zone color
 input bool  showLabels        = true     // Show score labels on zones
 input bool  showWFZ           = true     // Show Wider Fresh Zone box
+input bool  showHistory       = false    // Keep breached zones as faded outlines
 ```
 
 ---
@@ -113,7 +114,7 @@ If no departure is found, the zone is rejected (no box drawn).
 - 3–4 → 70% transparent (faded)
 - 0–2 → hidden (if `minScore > 0`) or 85% transparent
 
-Score label is shown on the right edge of the WFZ box: `D 7` or `S 4`.
+Score label is shown on the right edge of the WFZ box: `D 7` or `S 4`. After mitigation, label shows current and initial score: `D 6(8)`.
 
 ---
 
@@ -150,7 +151,7 @@ State transitions evaluated on each closed bar:
 | TOUCHED_1 → TOUCHED_2 | Same condition on a subsequent bar |
 | Any → BREACHED | `close < WFZ.bottom` (demand) or `close > WFZ.top` (supply) |
 
-On BREACHED: delete both boxes and label. On TOUCHED_N: update box color transparency and recalculate score (freshness points decrease).
+On BREACHED: delete both boxes and label (if `showHistory=true` and score ≥ `minScore`, keep as faded outline instead). On TOUCHED_N: update box color transparency and recalculate score (freshness points decrease). If score drops below `minScore` after a touch, zone is hidden in place (remains in state machine, removed on breach).
 
 ---
 
