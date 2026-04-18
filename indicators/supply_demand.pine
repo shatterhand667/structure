@@ -148,7 +148,16 @@ detectBOS(pivOffset, dir) =>
                 bos := true
                 break
     bos
-calcScore(depStr, bos, state, bLen, tight, trendAligned) => 0
+// Zone quality score 0–10.
+calcScore(depStr, bos, state, bLen, tight, trendAligned) =>
+    s = 0
+    s += depStr >= 4.0 ? 3 : depStr >= 2.5 ? 2 : depStr >= 1.5 ? 1 : 0  // departure strength (0–3)
+    s += bos ? 2 : 0                                                        // BOS (0–2)
+    s += state == FRESH ? 2 : state == TOUCHED_1 ? 1 : 0                   // freshness (0–2)
+    s += bLen <= 3 ? 1 : 0                                                  // base length (0–1)
+    s += tight ? 1 : 0                                                      // base tightness (0–1)
+    s += trendAligned ? 1 : 0                                               // trend alignment (0–1)
+    s
 createZone(dir, pT, pB, wT, wB, score)                  => na
 updateZones()                                            => na
 
