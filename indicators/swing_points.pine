@@ -63,6 +63,17 @@ var int   pivLoIdx = na       // bar_index of the confirmed swing low
 float     pivHi    = na       // set each bar when a high is confirmed
 float     pivLo    = na       // set each bar when a low is confirmed
 
+// Sweep level tracking arrays (Grab and Go)
+var sweepHiPrices = array.new_float(0)
+var sweepHiIdxs   = array.new_int(0)
+var sweepLoPrices = array.new_float(0)
+var sweepLoIdxs   = array.new_int(0)
+
+// Signal 2 pending state
+var int   s2Dir     = 0    // 1 = bullish pending, -1 = bearish pending, 0 = none
+var float s2SigHigh = na   // signal candle high
+var float s2SigLow  = na   // signal candle low
+
 // ─── Pivot Detection ──────────────────────────────────────────────────────────
 
 if swingMethod == "Pivot"
@@ -133,6 +144,12 @@ if not na(pivHi) and not na(pivHiIdx)
           textcolor = clr,
           style     = label.style_label_down,
           size      = sizeConst(labelSize))
+    // Feed sweep tracker
+    array.push(sweepHiPrices, pivHi)
+    array.push(sweepHiIdxs,   pivHiIdx)
+    if array.size(sweepHiPrices) > maxSweepLines
+        array.shift(sweepHiPrices)
+        array.shift(sweepHiIdxs)
     prevHigh := pivHi
     pivHiIdx := na
 
@@ -146,5 +163,11 @@ if not na(pivLo) and not na(pivLoIdx)
           textcolor = clr,
           style     = label.style_label_up,
           size      = sizeConst(labelSize))
+    // Feed sweep tracker
+    array.push(sweepLoPrices, pivLo)
+    array.push(sweepLoIdxs,   pivLoIdx)
+    if array.size(sweepLoPrices) > maxSweepLines
+        array.shift(sweepLoPrices)
+        array.shift(sweepLoIdxs)
     prevLow  := pivLo
     pivLoIdx := na
