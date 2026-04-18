@@ -1,0 +1,71 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0
+// at https://mozilla.org/MPL/2.0/
+
+//@version=6
+indicator("Supply & Demand Zones", overlay=true, max_boxes_count=200, max_labels_count=200)
+
+// ─── Zone Detection ───────────────────────────────────────────────────────────
+pivotLength       = input.int(5,   "Pivot Length",         minval=1, maxval=20,
+                     tooltip="Bars to the left and right required to confirm a pivot high/low.")
+maxBaseCandles    = input.int(4,   "Max Base Candles",      minval=1, maxval=5,
+                     tooltip="Maximum number of small-body candles that form the base before the impulse.")
+baseBodyMult      = input.float(0.5, "Base Body Mult",      minval=0.1, step=0.1,
+                     tooltip="A base candle's body must be smaller than this multiple of ATR(14).")
+departureBodyMult = input.float(1.5, "Departure Body Mult", minval=0.5, step=0.1,
+                     tooltip="At least one departure candle's body must exceed this multiple of ATR(14).")
+
+// ─── History ──────────────────────────────────────────────────────────────────
+lookbackDays = input.int(60, "Lookback (days)", minval=1, maxval=3650,
+                tooltip="Only draw zones for pivots within this many days from today.")
+
+// ─── Filtering ────────────────────────────────────────────────────────────────
+minScore    = input.int(3,     "Min Score",    minval=0, maxval=10, group="Filtering",
+               tooltip="Hide zones with a quality score below this value. 0 = show all.")
+trendFilter = input.bool(true, "Trend Filter", group="Filtering",
+               tooltip="When enabled, only shows demand zones in uptrend and supply zones in downtrend.")
+
+// ─── Visual ───────────────────────────────────────────────────────────────────
+demandColor = input.color(color.new(#26a69a, 0), "Demand Color", group="Visual")
+supplyColor = input.color(color.new(#ef5350, 0), "Supply Color", group="Visual")
+showLabels  = input.bool(true, "Show Labels", group="Visual",
+               tooltip="Show score label on the right edge of each zone.")
+showWFZ     = input.bool(true, "Show WFZ",   group="Visual",
+               tooltip="Show the Wider Fresh Zone (full base range) as a faded outer box.")
+
+// ─── State constants ──────────────────────────────────────────────────────────
+FRESH     = 0
+TOUCHED_1 = 1
+TOUCHED_2 = 2
+
+// ─── Trend tracking ───────────────────────────────────────────────────────────
+var float prevHi1 = na
+var float prevHi2 = na
+var float prevLo1 = na
+var float prevLo2 = na
+
+// ─── Zone storage (parallel arrays) ───────────────────────────────────────────
+var string[] zoneType   = array.new_string(0)
+var int[]    zoneState  = array.new_int(0)
+var bool[]   zoneInside = array.new_bool(0)
+var float[]  zPfzTop    = array.new_float(0)
+var float[]  zPfzBot    = array.new_float(0)
+var float[]  zWfzTop    = array.new_float(0)
+var float[]  zWfzBot    = array.new_float(0)
+var box[]    zWfzBox    = array.new_box(0)
+var box[]    zPfzBox    = array.new_box(0)
+var label[]  zLabel     = array.new_label(0)
+var int[]    zScore     = array.new_int(0)
+
+// ─── Stubs (replaced task by task) ───────────────────────────────────────────
+inLookback(pivOffset)                                    => false
+zoneOpacity(score, state)                                => 85
+currentTrend()                                           => 0
+findBase(pivOffset, dir)                                 => [float(na), float(na), float(na), float(na), 0, false]
+validateDeparture(pivOffset, dir)                        => false
+departureStrength(pivOffset)                             => float(0)
+detectBOS(pivOffset, dir)                                => false
+calcScore(depStr, bos, state, bLen, tight, trendAligned) => 0
+createZone(dir, pT, pB, wT, wB, score)                  => na
+updateZones()                                            => na
+
+// ─── Main (filled in Task 8) ──────────────────────────────────────────────────
