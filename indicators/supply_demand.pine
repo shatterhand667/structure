@@ -57,9 +57,20 @@ var label[]  zLabel     = array.new_label(0)
 var int[]    zScore     = array.new_int(0)
 
 // ─── Stubs (replaced task by task) ───────────────────────────────────────────
-inLookback(pivOffset)                                    => false
-zoneOpacity(score, state)                                => 85
-currentTrend()                                           => 0
+// Returns true if the pivot bar (pivOffset bars ago) is within the lookback window.
+inLookback(pivOffset) =>
+    time[pivOffset] >= timenow - lookbackDays * 86400000
+
+// Base opacity (transparency %) from score and touch count. Higher = more faded.
+zoneOpacity(score, state) =>
+    base = score >= 8 ? 20 : score >= 5 ? 50 : score >= 3 ? 70 : 85
+    math.min(base + state * 15, 90)
+
+// Trend direction based on last two pivot highs and lows.
+currentTrend() =>
+    uptrend   = not na(prevLo1) and not na(prevLo2) and prevLo1 > prevLo2
+    downtrend = not na(prevHi1) and not na(prevHi2) and prevHi1 < prevHi2
+    uptrend ? 1 : downtrend ? -1 : 0
 findBase(pivOffset, dir)                                 => [float(na), float(na), float(na), float(na), 0, false]
 validateDeparture(pivOffset, dir)                        => false
 departureStrength(pivOffset)                             => float(0)
