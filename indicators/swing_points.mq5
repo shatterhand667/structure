@@ -195,7 +195,10 @@ void ProcessBar(int i, int rates_total,
         string name = "SP_LBL_" + IntegerToString((long)time[pivHiBar]);
         if(time[pivHiBar] >= lookbackCutoff)
             CreateSwingLabel(name, time[pivHiBar], high[pivHiBar], lbl, clr, true);
-        //--- Feed sweep tracker (Task 5)
+        //--- Feed sweep tracker
+        string lineName = "SP_LINE_HI_" + IntegerToString((long)time[pivHiBar]);
+        CreateSweepLine(lineName, time[pivHiBar], pivHi, BearishColor);
+        PushSweepHi(pivHi, pivHiBar, lineName);
         prevHigh = pivHi;
     }
 
@@ -207,8 +210,40 @@ void ProcessBar(int i, int rates_total,
         string name = "SP_LBL_" + IntegerToString((long)time[pivLoBar]);
         if(time[pivLoBar] >= lookbackCutoff)
             CreateSwingLabel(name, time[pivLoBar], low[pivLoBar], lbl, clr, false);
-        //--- Feed sweep tracker (Task 5)
+        //--- Feed sweep tracker
+        string lineName = "SP_LINE_LO_" + IntegerToString((long)time[pivLoBar]);
+        CreateSweepLine(lineName, time[pivLoBar], pivLo, BullishColor);
+        PushSweepLo(pivLo, pivLoBar, lineName);
         prevLow = pivLo;
+    }
+
+    //--- Detect high sweeps
+    int hiIdx = 0;
+    while(hiIdx < ArraySize(sweepHiPrices))
+    {
+        if(high[i] > sweepHiPrices[hiIdx])
+        {
+            // Stop the line at the signal candle
+            ObjectSetInteger(0, sweepHiLineNames[hiIdx], OBJPROP_TIME,      1, (long)time[i]);
+            ObjectSetInteger(0, sweepHiLineNames[hiIdx], OBJPROP_RAY_RIGHT, false);
+            // Signal 1 + S2 state — Task 6
+            RemoveSweepHi(hiIdx);
+        }
+        else hiIdx++;
+    }
+
+    //--- Detect low sweeps
+    int loIdx = 0;
+    while(loIdx < ArraySize(sweepLoPrices))
+    {
+        if(low[i] < sweepLoPrices[loIdx])
+        {
+            ObjectSetInteger(0, sweepLoLineNames[loIdx], OBJPROP_TIME,      1, (long)time[i]);
+            ObjectSetInteger(0, sweepLoLineNames[loIdx], OBJPROP_RAY_RIGHT, false);
+            // Signal 1 + S2 state — Task 6
+            RemoveSweepLo(loIdx);
+        }
+        else loIdx++;
     }
 }
 
@@ -277,6 +312,88 @@ ENUM_LINE_STYLE ToLineStyle(ENUM_SWEEP_STYLE s)
         case Dotted: return STYLE_DOT;
         default:     return STYLE_SOLID;
     }
+}
+
+//+------------------------------------------------------------------+
+void PushSweepHi(double price, int bar, string lineName)
+{
+    int n = ArraySize(sweepHiPrices);
+    ArrayResize(sweepHiPrices,    n + 1);
+    ArrayResize(sweepHiBars,      n + 1);
+    ArrayResize(sweepHiLineNames, n + 1);
+    sweepHiPrices[n]    = price;
+    sweepHiBars[n]      = bar;
+    sweepHiLineNames[n] = lineName;
+
+    if(ArraySize(sweepHiPrices) > MaxSweepLines)
+    {
+        ObjectDelete(0, sweepHiLineNames[0]);
+        for(int k = 0; k < ArraySize(sweepHiPrices) - 1; k++)
+        {
+            sweepHiPrices[k]    = sweepHiPrices[k+1];
+            sweepHiBars[k]      = sweepHiBars[k+1];
+            sweepHiLineNames[k] = sweepHiLineNames[k+1];
+        }
+        ArrayResize(sweepHiPrices,    ArraySize(sweepHiPrices)    - 1);
+        ArrayResize(sweepHiBars,      ArraySize(sweepHiBars)      - 1);
+        ArrayResize(sweepHiLineNames, ArraySize(sweepHiLineNames) - 1);
+    }
+}
+
+//+------------------------------------------------------------------+
+void PushSweepLo(double price, int bar, string lineName)
+{
+    int n = ArraySize(sweepLoPrices);
+    ArrayResize(sweepLoPrices,    n + 1);
+    ArrayResize(sweepLoBars,      n + 1);
+    ArrayResize(sweepLoLineNames, n + 1);
+    sweepLoPrices[n]    = price;
+    sweepLoBars[n]      = bar;
+    sweepLoLineNames[n] = lineName;
+
+    if(ArraySize(sweepLoPrices) > MaxSweepLines)
+    {
+        ObjectDelete(0, sweepLoLineNames[0]);
+        for(int k = 0; k < ArraySize(sweepLoPrices) - 1; k++)
+        {
+            sweepLoPrices[k]    = sweepLoPrices[k+1];
+            sweepLoBars[k]      = sweepLoBars[k+1];
+            sweepLoLineNames[k] = sweepLoLineNames[k+1];
+        }
+        ArrayResize(sweepLoPrices,    ArraySize(sweepLoPrices)    - 1);
+        ArrayResize(sweepLoBars,      ArraySize(sweepLoBars)      - 1);
+        ArrayResize(sweepLoLineNames, ArraySize(sweepLoLineNames) - 1);
+    }
+}
+
+//+------------------------------------------------------------------+
+void RemoveSweepHi(int idx)
+{
+    int n = ArraySize(sweepHiPrices);
+    for(int k = idx; k < n - 1; k++)
+    {
+        sweepHiPrices[k]    = sweepHiPrices[k+1];
+        sweepHiBars[k]      = sweepHiBars[k+1];
+        sweepHiLineNames[k] = sweepHiLineNames[k+1];
+    }
+    ArrayResize(sweepHiPrices,    n - 1);
+    ArrayResize(sweepHiBars,      n - 1);
+    ArrayResize(sweepHiLineNames, n - 1);
+}
+
+//+------------------------------------------------------------------+
+void RemoveSweepLo(int idx)
+{
+    int n = ArraySize(sweepLoPrices);
+    for(int k = idx; k < n - 1; k++)
+    {
+        sweepLoPrices[k]    = sweepLoPrices[k+1];
+        sweepLoBars[k]      = sweepLoBars[k+1];
+        sweepLoLineNames[k] = sweepLoLineNames[k+1];
+    }
+    ArrayResize(sweepLoPrices,    n - 1);
+    ArrayResize(sweepLoBars,      n - 1);
+    ArrayResize(sweepLoLineNames, n - 1);
 }
 
 //+------------------------------------------------------------------+
