@@ -2,7 +2,7 @@
 // at https://mozilla.org/MPL/2.0/
 
 //@version=6
-indicator("Trading Pod - Supply and Demand Zones", overlay=true, max_boxes_count=200, max_labels_count=200)
+indicator("Trading Pod - Supply and Demand Zones", overlay=true, max_boxes_count=500, max_labels_count=500)
 
 // ─── Zone Detection ───────────────────────────────────────────────────────────
 pivotLength       = input.int(4,   "Pivot Length",         minval=1, maxval=20,
