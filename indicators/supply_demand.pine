@@ -158,7 +158,45 @@ calcScore(depStr, bos, state, bLen, tight, trendAligned) =>
     s += tight ? 1 : 0                                                      // base tightness (0–1)
     s += trendAligned ? 1 : 0                                               // trend alignment (0–1)
     s
-createZone(dir, pT, pB, wT, wB, score)                  => na
+// Draw PFZ + WFZ boxes and score label. Append to all zone storage arrays.
+createZone(dir, pT, pB, wT, wB, score) =>
+    baseClr = dir == 1 ? demandColor : supplyColor
+    opacity = zoneOpacity(score, FRESH)
+    leftBar = bar_index - pivotLength
+
+    // WFZ: wide faded outer box
+    wOp  = math.min(opacity + 20, 95)
+    wBox = box.new(leftBar, wT, bar_index, wB,
+             border_color = showWFZ ? color.new(baseClr, 60)  : color.new(baseClr, 100),
+             bgcolor      = showWFZ ? color.new(baseClr, wOp) : color.new(baseClr, 100),
+             extend       = extend.right)
+
+    // PFZ: tight vivid inner box
+    pBox = box.new(leftBar, pT, bar_index, pB,
+             border_color = color.new(baseClr, 0),
+             bgcolor      = color.new(baseClr, opacity),
+             extend       = extend.right)
+
+    // Score label
+    txt = (dir == 1 ? "D " : "S ") + str.tostring(score)
+    lbl = label.new(bar_index, dir == 1 ? pT : pB,
+             showLabels ? txt : "",
+             color     = color.new(baseClr, 70),
+             textcolor = color.new(baseClr, 0),
+             style     = dir == 1 ? label.style_label_upper_left : label.style_label_lower_left,
+             size      = size.small)
+
+    array.push(zoneType,   dir == 1 ? "D" : "S")
+    array.push(zoneState,  FRESH)
+    array.push(zoneInside, false)
+    array.push(zPfzTop,    pT)
+    array.push(zPfzBot,    pB)
+    array.push(zWfzTop,    wT)
+    array.push(zWfzBot,    wB)
+    array.push(zWfzBox,    wBox)
+    array.push(zPfzBox,    pBox)
+    array.push(zLabel,     lbl)
+    array.push(zScore,     score)
 updateZones()                                            => na
 
 // ─── Main (filled in Task 8) ──────────────────────────────────────────────────
