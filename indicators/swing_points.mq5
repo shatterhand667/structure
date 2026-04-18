@@ -138,7 +138,53 @@ void ProcessBar(int i, int rates_total,
         }
     }
 
-    //--- Structural mode detection (Task 4)
+    //--- Structural mode detection
+    else if(SwingMethod == Structural)
+    {
+        //--- Register new pending pivots
+        if(IsPivotHigh(i, high, PivotLength))
+        {
+            pendingHi    = high[i];
+            pendingHiBar = i;
+        }
+        if(IsPivotLow(i, low, PivotLength))
+        {
+            pendingLo    = low[i];
+            pendingLoBar = i;
+        }
+
+        double atrVal = CalcATR(i, 14, high, low, close);
+
+        //--- Confirm pending high: price drops enough below it
+        if(pendingHi != EMPTY_VALUE)
+        {
+            bool moved = (ConfirmUnit == Percent)
+                ? (pendingHi - close[i]) / pendingHi >= ConfirmPct / 100.0
+                : (pendingHi - close[i]) >= ConfirmPct * atrVal;
+            if(moved)
+            {
+                pivHi        = pendingHi;
+                pivHiBar     = pendingHiBar;
+                pendingHi    = EMPTY_VALUE;
+                pendingHiBar = -1;
+            }
+        }
+
+        //--- Confirm pending low: price rises enough above it
+        if(pendingLo != EMPTY_VALUE)
+        {
+            bool moved = (ConfirmUnit == Percent)
+                ? (close[i] - pendingLo) / pendingLo >= ConfirmPct / 100.0
+                : (close[i] - pendingLo) >= ConfirmPct * atrVal;
+            if(moved)
+            {
+                pivLo        = pendingLo;
+                pivLoBar     = pendingLoBar;
+                pendingLo    = EMPTY_VALUE;
+                pendingLoBar = -1;
+            }
+        }
+    }
 
     //--- Classification + labels
     if(pivHi != EMPTY_VALUE && pivHiBar >= 0)
