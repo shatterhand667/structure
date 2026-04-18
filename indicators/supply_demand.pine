@@ -29,13 +29,16 @@ demandColor = input.color(color.new(#26a69a, 0), "Demand Color", group="Visual")
 supplyColor = input.color(color.new(#ef5350, 0), "Supply Color", group="Visual")
 showLabels  = input.bool(true, "Show Labels", group="Visual",
                tooltip="Show score label on the right edge of each zone.")
-showWFZ     = input.bool(true, "Show WFZ",   group="Visual",
+showWFZ     = input.bool(true,  "Show WFZ",     group="Visual",
                tooltip="Show the Wider Fresh Zone (full base range) as a faded outer box.")
+showHistory = input.bool(false, "Show History",  group="Visual",
+               tooltip="Keep breached zones visible as faded outlines. Useful for reviewing past setups.")
 
 // ─── State constants ──────────────────────────────────────────────────────────
 FRESH     = 0
 TOUCHED_1 = 1
 TOUCHED_2 = 2
+BREACHED  = 3
 
 // ─── Trend tracking ───────────────────────────────────────────────────────────
 var float prevHi1 = na
@@ -213,24 +216,43 @@ updateZones() =>
         isDmnd  = typ == "D"
         baseClr = isDmnd ? demandColor : supplyColor
 
-        // Breach: close beyond the far side of WFZ — delete and remove
+        // Skip already-breached historical zones (no further updates needed)
+        if state == BREACHED
+            i += 1
+            continue
+
+        // Breach: close beyond the far side of WFZ
         breached = isDmnd ? close < wB : close > wT
         if breached
-            box.delete(wBox)
-            box.delete(pBox)
-            label.delete(lbl)
-            array.remove(zoneType,   i)
-            array.remove(zoneState,  i)
-            array.remove(zoneInside, i)
-            array.remove(zPfzTop,    i)
-            array.remove(zPfzBot,    i)
-            array.remove(zWfzTop,    i)
-            array.remove(zWfzBot,    i)
-            array.remove(zWfzBox,    i)
-            array.remove(zPfzBox,    i)
-            array.remove(zLabel,     i)
-            array.remove(zScore,     i)
-            continue  // i now points to next element — do not increment
+            if showHistory
+                // Keep as faded historical zone — fix right edge, remove extend
+                array.set(zoneState, i, BREACHED)
+                box.set_extend(pBox, extend.none)
+                box.set_right(pBox,  bar_index)
+                box.set_extend(wBox, extend.none)
+                box.set_right(wBox,  bar_index)
+                box.set_bgcolor(pBox, color.new(baseClr, 90))
+                box.set_bgcolor(wBox, color.new(baseClr, 95))
+                box.set_border_color(pBox, color.new(baseClr, 80))
+                box.set_border_color(wBox, color.new(baseClr, 90))
+                label.set_text(lbl, "")
+                i += 1
+            else
+                box.delete(wBox)
+                box.delete(pBox)
+                label.delete(lbl)
+                array.remove(zoneType,   i)
+                array.remove(zoneState,  i)
+                array.remove(zoneInside, i)
+                array.remove(zPfzTop,    i)
+                array.remove(zPfzBot,    i)
+                array.remove(zWfzTop,    i)
+                array.remove(zWfzBot,    i)
+                array.remove(zWfzBox,    i)
+                array.remove(zPfzBox,    i)
+                array.remove(zLabel,     i)
+                array.remove(zScore,     i)
+            continue  // handled — do not fall through to touch logic
 
         // Is price inside WFZ this bar?
         inNow = isDmnd ? low < wT : high > wB
