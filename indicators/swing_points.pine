@@ -70,9 +70,10 @@ var sweepLoPrices = array.new_float(0)
 var sweepLoIdxs   = array.new_int(0)
 
 // Signal 2 pending state
-var int   s2Dir     = 0    // 1 = bullish pending, -1 = bearish pending, 0 = none
-var float s2SigHigh = na   // signal candle high
-var float s2SigLow  = na   // signal candle low
+var int   s2Dir         = 0    // 1 = bullish pending, -1 = bearish pending, 0 = none
+var float s2SigHigh     = na   // signal candle high
+var float s2SigLow      = na   // signal candle low
+var int   s2BarsWaited  = 0    // bars elapsed since signal candle (max 2 checked)
 
 // ─── Pivot Detection ──────────────────────────────────────────────────────────
 
@@ -174,20 +175,30 @@ if not na(pivLo) and not na(pivLoIdx)
 
 // ─── Grab and Go ──────────────────────────────────────────────────────────────
 
-// Signal 2: check previous bar's sweep against current close (reset s2Dir regardless of showS2)
+// Signal 2: check 1st and 2nd candle after signal candle
 if s2Dir == 1
+    s2BarsWaited += 1
     if showS2 and close > s2SigLow + (s2SigHigh - s2SigLow) * 0.5
         label.new(bar_index, low, "",
           color = bullishColor, style = label.style_triangleup,
           size  = sizeConst(sigSize))
-    s2Dir := 0
+        s2Dir        := 0
+        s2BarsWaited := 0
+    else if s2BarsWaited >= 2
+        s2Dir        := 0
+        s2BarsWaited := 0
 
 if s2Dir == -1
+    s2BarsWaited += 1
     if showS2 and close < s2SigHigh - (s2SigHigh - s2SigLow) * 0.5
         label.new(bar_index, high, "",
           color = bearishColor, style = label.style_triangledown,
           size  = sizeConst(sigSize))
-    s2Dir := 0
+        s2Dir        := 0
+        s2BarsWaited := 0
+    else if s2BarsWaited >= 2
+        s2Dir        := 0
+        s2BarsWaited := 0
 
 // Detect high sweeps
 int hiI = 0
@@ -207,9 +218,10 @@ while hiI < array.size(sweepHiPrices)
                   color = bearishColor, style = label.style_triangledown,
                   size  = sizeConst(sigSize))
         // Set Signal 2 state
-        s2Dir     := -1
-        s2SigHigh := high
-        s2SigLow  := low
+        s2Dir        := -1
+        s2SigHigh    := high
+        s2SigLow     := low
+        s2BarsWaited := 0
         array.remove(sweepHiPrices, hiI)
         array.remove(sweepHiIdxs,   hiI)
     else
@@ -233,9 +245,10 @@ while loI < array.size(sweepLoPrices)
                   color = bullishColor, style = label.style_triangleup,
                   size  = sizeConst(sigSize))
         // Set Signal 2 state
-        s2Dir     := 1
-        s2SigHigh := high
-        s2SigLow  := low
+        s2Dir        := 1
+        s2SigHigh    := high
+        s2SigLow     := low
+        s2BarsWaited := 0
         array.remove(sweepLoPrices, loI)
         array.remove(sweepLoIdxs,   loI)
     else
