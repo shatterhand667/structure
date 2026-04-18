@@ -106,10 +106,30 @@ if swingMethod == "Structural"
             pendingLo    := na
             pendingLoIdx := na
 
-// TEMP — remove in Task 5
-if not na(pivHi)
-    label.new(pivHiIdx, pivHi, "•",
-      color=color.new(color.white, 100), textcolor=color.yellow, style=label.style_label_down)
-if not na(pivLo)
-    label.new(pivLoIdx, pivLo, "•",
-      color=color.new(color.white, 100), textcolor=color.yellow, style=label.style_label_up)
+// ─── Classification & Labels ──────────────────────────────────────────────────
+
+if not na(pivHi) and not na(pivHiIdx)
+    isHH = na(prevHigh) or pivHi >= prevHigh
+    lbl  = isHH ? "HH" : "LH"
+    clr  = isHH ? hhColor : lhColor
+    if inLookback(pivHiIdx)
+        label.new(pivHiIdx, pivHi, lbl,
+          color     = color.new(color.white, 100),
+          textcolor = clr,
+          style     = label.style_label_down,
+          size      = sizeConst(labelSize))
+    prevHigh := pivHi
+    pivHiIdx := na
+
+if not na(pivLo) and not na(pivLoIdx)
+    isLL = na(prevLow) or pivLo <= prevLow
+    lbl  = isLL ? "LL" : "HL"
+    clr  = isLL ? llColor : hlColor
+    if inLookback(pivLoIdx)
+        label.new(pivLoIdx, pivLo, lbl,
+          color     = color.new(color.white, 100),
+          textcolor = clr,
+          style     = label.style_label_up,
+          size      = sizeConst(labelSize))
+    prevLow  := pivLo
+    pivLoIdx := na
